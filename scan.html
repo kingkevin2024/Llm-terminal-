@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scan | L&L Terminal</title>
+    
+    <!-- SPEED OPTIMIZATION -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/64d58efce2.js" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    
+    <style>
+        :root {
+            --bg-black: #050505;
+            --bg-sidebar: #0a0e14;
+            --bg-pane: #0f121a;
+            --accent: #2962ff;
+            --accent-glow: rgba(41, 98, 255, 0.4);
+            --border: #1e222d;
+            --text-main: #ffffff;
+            --text-dim: #868991;
+            --success: #00ff88;
+            --error: #ff4444;
+            --sidebar-width: 240px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: var(--bg-black); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* Sidebar */
+        .sidebar { 
+            width: var(--sidebar-width); 
+            background: var(--bg-sidebar); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 1000;
+        }
+        .sidebar-brand { 
+            padding: 25px; font-weight: 800; color: var(--accent); 
+            border-bottom: 1px solid var(--border); letter-spacing: 1px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .nav-list { flex-grow: 1; padding: 20px 10px; list-style: none; }
+        .nav-link { 
+            display: flex; align-items: center; padding: 12px 15px; 
+            color: var(--text-dim); text-decoration: none; border-radius: 6px; 
+            font-size: 0.85rem; margin-bottom: 5px; transition: 0.2s;
+        }
+        .nav-link:hover, .nav-link.active { background: rgba(41, 98, 255, 0.1); color: var(--text-main); }
+        .nav-link i { margin-right: 12px; width: 18px; text-align: center; }
+
+        /* Main Content */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        .top-nav { 
+            height: 60px; border-bottom: 1px solid var(--border); 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 25px; background: var(--bg-sidebar); 
+        }
+
+        /* Scanner Header */
+        .scanner-input-area {
+            padding: 40px 25px 20px;
+            background: linear-gradient(to bottom, var(--bg-sidebar), transparent);
+        }
+        .scan-bar {
+            display: flex; gap: 15px; max-width: 800px; margin: 0 auto;
+            background: var(--bg-pane); padding: 10px; border-radius: 50px;
+            border: 1px solid var(--border); transition: 0.3s;
+        }
+        .scan-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+        .scan-bar input {
+            flex-grow: 1; background: transparent; border: none; outline: none;
+            color: white; padding: 0 20px; font-family: 'JetBrains Mono', monospace;
+        }
+        .btn-scan {
+            background: var(--accent); color: white; border: none;
+            padding: 12px 30px; border-radius: 50px; font-weight: 700;
+            cursor: pointer; text-transform: uppercase; font-size: 0.75rem;
+        }
+
+        /* Grid Layout */
+        .grid-container { 
+            padding: 25px; display: grid; grid-template-columns: repeat(4, 1fr); 
+            gap: 20px; overflow-y: auto; flex-grow: 1;
+        }
+        .widget { 
+            background: var(--bg-pane); border: 1px solid var(--border); 
+            border-radius: 8px; padding: 20px; transition: 0.3s;
+        }
+        .widget-header { 
+            font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); 
+            margin-bottom: 15px; display: flex; justify-content: space-between; 
+            letter-spacing: 1px; font-weight: 700;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+        
+        .col-span-2 { grid-column: span 2; }
+        .col-span-4 { grid-column: span 4; }
+
+        /* Live Terminal Output */
+        .console-box {
+            background: #000; border-radius: 4px; padding: 15px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+            color: var(--text-dim); height: 200px; overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+        .console-line { margin-bottom: 5px; display: flex; gap: 10px; }
+        .console-timestamp { color: var(--accent); }
+        .console-success { color: var(--success); }
+
+        @media (max-width: 1024px) { .grid-container { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">L&L // SYSTEM</div>
+        <ul class="nav-list">
+            <li><a href="/dashboard" class="nav-link"><i class="fas fa-terminal"></i> Terminal</a></li>
+            <li><a href="/scan" class="nav-link active"><i class="fas fa-search"></i> Web Scan</a></li>
+            <li><a href="/settings" class="nav-link"><i class="fas fa-cog"></i> Config</a></li>
+        </ul>
+        <div style="padding: 20px; border-top: 1px solid var(--border);">
+            <a href="/logout" style="color: var(--error); text-decoration: none; font-size: 0.8rem;"><i class="fas fa-power-off"></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div style="font-size: 0.75rem; font-family: 'JetBrains Mono'; color: var(--text-dim);">
+                NODE_SCANNER_v1.0
+            </div>
+            <div style="font-size: 0.85rem; font-weight: 600;"><i class="fas fa-user-shield"></i> {{ username }}</div>
+        </header>
+
+        <section class="scanner-input-area">
+            <div class="scan-bar">
+                <input type="text" id="target-domain" placeholder="ENTER DOMAIN (e.g. competitor.com)" autocomplete="off">
+                <button class="btn-scan" onclick="startScan()">Analyze Target</button>
+            </div>
+        </section>
+
+        <div class="grid-container">
+            <!-- Platform Widget -->
+            <div class="widget">
+                <div class="widget-header">Platform Detect <i class="fas fa-microchip"></i></div>
+                <div class="stat-value" id="res-platform">READY</div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 5px;">Architecture Detection</div>
+            </div>
+
+            <!-- SSL/Security Widget -->
+            <div class="widget">
+                <div class="widget-header">Security Layer <i class="fas fa-shield-alt"></i></div>
+                <div class="stat-value" id="res-security">READY</div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 5px;">SSL & Header Protocol</div>
+            </div>
+
+            <!-- Performance Widget -->
+            <div class="widget">
+                <div class="widget-header">Velocity Rank <i class="fas fa-bolt"></i></div>
+                <div class="stat-value" id="res-velocity">READY</div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 5px;">Market Movement Speed</div>
+            </div>
+
+            <!-- Health Widget -->
+            <div class="widget">
+                <div class="widget-header">Node Health <i class="fas fa-heartbeat"></i></div>
+                <div class="stat-value" id="res-health">READY</div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 5px;">Conversion Friction Audit</div>
+            </div>
+
+            <!-- Console Log Output -->
+            <div class="widget col-span-4">
+                <div class="widget-header">Live Handshake Console <i class="fas fa-code"></i></div>
+                <div class="console-box" id="console">
+                    <div class="console-line">
+                        <span class="console-timestamp">[SYSTEM]</span> Awaiting target input...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function logToConsole(msg, type = '') {
+            const consoleBox = document.getElementById('console');
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.innerHTML = `
+                <span class="console-timestamp">[${time}]</span> 
+                <span class="${type === 'success' ? 'console-success' : ''}">${msg}</span>
+            `;
+            consoleBox.appendChild(line);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        async function startScan() {
+    const domain = document.getElementById('target-domain').value.trim();
+    if (!domain) return alert("Please enter a target domain.");
+
+    const btn = document.querySelector('.btn-scan');
+    const consoleBox = document.getElementById('console');
+    
+    // UI Loading State
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> ANALYZING';
+    btn.disabled = true;
+    
+    // Clear previous results and log start
+    document.querySelectorAll('.stat-value').forEach(el => el.innerText = "---");
+    consoleBox.innerHTML = ""; 
+    logToConsole(`System: Starting Deep-Scan Protocol on ${domain}...`);
+
+    try {
+        const response = await fetch('/api/perform_scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain: domain })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Sequentially update the UI for a "Processing" feel
+            data.logs.forEach((log, index) => {
+                setTimeout(() => logToConsole(log), index * 400);
+            });
+
+            setTimeout(() => {
+                document.getElementById('res-platform').innerText = data.platform;
+                document.getElementById('res-security').innerText = data.security;
+                document.getElementById('res-velocity').innerText = data.velocity;
+                document.getElementById('res-health').innerText = data.health;
+                
+                // Color coding logic
+                const healthEl = document.getElementById('res-health');
+                const score = parseInt(data.health);
+                healthEl.style.color = score > 80 ? "var(--success)" : (score > 50 ? "orange" : "var(--error)");
+                
+                logToConsole("Scan operation successful. Report generated.", "success");
+            }, 1800);
+
+        } else {
+            logToConsole(`Error: ${data.message}`, "error");
+        }
+    } catch (err) {
+        logToConsole("System Failure: Could not reach the scanning engine.", "error");
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = 'Analyze Target';
+            btn.disabled = false;
+        }, 2000);
+    }
+}
+    </script>
+</body>
+</html>

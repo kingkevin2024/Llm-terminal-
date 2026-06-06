@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | L&L Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/64d58efce2.js" crossorigin="anonymous" defer></script>
+    
+    <style>
+        :root {
+            --bg-black: #000000; --bg-sidebar: #0a0e14; --bg-pane: #131722;
+            --accent: #2962ff; --accent-glow: rgba(41, 98, 255, 0.2);
+            --border: #2a2e39; --text-main: #ffffff; --text-dim: #868991;
+            --error: #ff4444; --success: #00ff88;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-black); color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; min-height: 100vh; }
+
+        .sidebar { width: 240px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-brand { padding: 25px; font-weight: 800; color: var(--accent); border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .nav-list { flex-grow: 1; padding: 20px 10px; }
+        .nav-link { display: flex; align-items: center; padding: 12px 15px; color: var(--text-dim); text-decoration: none; font-size: 0.85rem; border-radius: 4px; margin-bottom: 5px; }
+        .nav-link.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid var(--border); }
+        .btn-logout { color: var(--error); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; }
+
+        .main-content { flex-grow: 1; padding: 60px 40px; overflow-y: auto; }
+        .content-container { max-width: 800px; margin: 0 auto; }
+        .card { background: var(--bg-pane); border: 1px solid var(--border); padding: 30px; border-radius: 8px; margin-bottom: 40px; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; font-weight: 600; }
+        
+        input { width: 100%; background: #000; border: 1px solid var(--border); padding: 14px; color: white; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+        input:disabled { opacity: 0.6; cursor: not-allowed; border-style: dashed; }
+        
+        .btn-sync, .btn-edit { border: none; padding: 16px 24px; border-radius: 4px; cursor: pointer; font-weight: 700; width: 100%; transition: 0.2s; }
+        .btn-sync { background: var(--accent); color: white; }
+        .btn-edit { background: transparent; border: 1px solid var(--border); color: var(--text-dim); margin-top: 10px; }
+        .btn-edit:hover { border-color: var(--accent); color: white; }
+
+        #statusMessage { margin-top: 20px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; padding: 12px; border-radius: 4px; display: none; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">L&L // TERMINAL</div>
+        <nav class="nav-list">
+            <a href="/dashboard" class="nav-link"><i class="fas fa-th-large"></i> Overview</a>
+            <a href="/scan" class="nav-link"><i class="fas fa-search"></i> Web Scan</a>
+            <a href="/settings" class="nav-link active"><i class="fas fa-sliders-h"></i> Settings</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout" class="btn-logout"><i class="fas fa-power-off"></i>&nbsp; Logout Session</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-container">
+            <h2>System Settings</h2>
+
+            <h3>User Identity</h3>
+            <section class="card">
+                <div class="form-group">
+                    <label>Registered Email</label>
+                    <input type="text" value="{{ email }}" disabled>
+                </div>
+            </section>
+
+            <h3>Market Integrations</h3>
+            <section class="card">
+                <!-- Helper logic to determine initial locked state -->
+                {% set has_config = True if user.shopify_api_key else False %}
+                
+                <form id="integrationForm">
+                    <div class="form-group">
+                        <label>Shopify Store Domain</label>
+                        <input type="text" id="store_domain" value="{{ user.store_domain or '' }}" {% if has_config %}disabled{% endif %} required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Admin API Access Token</label>
+                        <input type="password" id="shopify_api" value="{{ user.shopify_api_key or '' }}" {% if has_config %}disabled{% endif %} required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>System Webhook URL</label>
+                        <input type="text" id="webhook_url" value="{{ user.webhook_url or '' }}" {% if has_config %}disabled{% endif %} required>
+                    </div>
+
+                    <button type="button" class="btn-sync" id="syncBtn" onclick="syncData()" {% if has_config %}style="display:none;"{% endif %}>
+                        <i class="fas fa-plug"></i> Establish Data Link
+                    </button>
+
+                    <button type="button" class="btn-edit" id="editBtn" onclick="enableEditing()" {% if not has_config %}style="display:none;"{% endif %}>
+                        <i class="fas fa-edit"></i> Modify Connection
+                    </button>
+                </form>
+
+                <div id="statusMessage"></div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        function enableEditing() {
+            document.querySelectorAll('#integrationForm input').forEach(input => input.disabled = false);
+            document.getElementById('syncBtn').style.display = 'block';
+            document.getElementById('editBtn').style.display = 'none';
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        async function syncData() {
+            const btn = document.getElementById('syncBtn');
+            const status = document.getElementById('statusMessage');
+            
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> SYNCING...';
+            btn.disabled = true;
+
+            const payload = {
+                store_domain: document.getElementById('store_domain').value,
+                shopify_api: document.getElementById('shopify_api').value,
+                webhook_url: document.getElementById('webhook_url').value
+            };
+
+            try {
+                const response = await fetch('/verify_integrations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                status.style.display = "block";
+                status.innerText = result.message;
+
+                if (response.ok) {
+                    status.style.color = "var(--success)";
+                    status.style.background = "rgba(0,255,136,0.1)";
+                    // LOCK UI AUTOMATICALLY
+                    document.querySelectorAll('#integrationForm input').forEach(input => input.disabled = true);
+                    document.getElementById('syncBtn').style.display = 'none';
+                    document.getElementById('editBtn').style.display = 'block';
+                } else {
+                    status.style.color = "var(--error)";
+                    status.style.background = "rgba(255,68,68,0.1)";
+                }
+            } catch {
+                status.style.display = "block";
+                status.innerText = "Connection failure.";
+            } finally {
+                btn.innerHTML = '<i class="fas fa-plug"></i> Establish Data Link';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

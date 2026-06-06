@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize Node | Look and Leap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-black: #000000;
+            --bg-card: #131722;
+            --accent: #2962ff;
+            --accent-glow: rgba(41, 98, 255, 0.4);
+            --border: #2a2e39;
+            --text-main: #ffffff;
+            --text-dim: #868991;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh; /* Changed to min-height for mobile responsiveness */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-y: auto;   /* Allow vertical scroll if form is tall */
+            position: relative;
+            padding: 20px;      /* Margin for small screens */
+        }
+
+        .grid-bg {
+            position: fixed; /* Fixed so it stays behind content during scroll */
+            top: 0; left: 0; width: 200%; height: 200%;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), 
+                              linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg) translateY(-200px);
+            opacity: 0.15;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .auth-container { width: 100%; max-width: 400px; z-index: 10; margin: auto; }
+
+        .auth-pane {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 4px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .system-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 2px;
+            margin-bottom: 20px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 10px; }
+        #auth-desc { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 30px; }
+
+        .input-group { text-align: left; margin-bottom: 20px; }
+        
+        #username-group { 
+            max-height: 100px; 
+            opacity: 1; 
+            transition: all 0.4s ease; 
+            overflow: hidden;
+        }
+        .login-mode #username-group { 
+            max-height: 0; 
+            opacity: 0; 
+            margin-bottom: 0; 
+        }
+
+        label { 
+            display: block; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            margin-bottom: 8px; 
+            letter-spacing: 0.5px; 
+        }
+
+        input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 4px;
+            font-family: inherit;
+            transition: 0.3s;
+            font-size: 16px; /* Prevents auto-zoom on iOS */
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .auth-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .auth-btn:hover { background: #1e4bd8; box-shadow: 0 0 20px var(--accent-glow); }
+
+        #status { margin-top: 20px; font-size: 0.85rem; min-height: 20px; }
+        .error { color: #ff4444; }
+        .success { color: #00ff88; }
+
+        .mode-toggle {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .mode-toggle span {
+            color: var(--accent);
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .pane-footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .pane-footer a { color: var(--text-dim); text-decoration: none; font-size: 0.8rem; }
+
+        /* Responsive adjustment for small phones */
+        @media (max-width: 400px) {
+            .auth-pane {
+                padding: 30px 20px;
+            }
+            h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="auth-container">
+        <div class="auth-pane" id="auth-pane">
+            <div class="system-badge" id="protocol-label">System Protocol // Register</div>
+            <h1 id="auth-title">Initialize Node</h1>
+            <p id="auth-desc">Connect your account to the analysis network.</p>
+
+            <form id="authForm">
+                <div class="input-group" id="username-group">
+                    <label>Terminal Username</label>
+                    <input type="text" id="username" placeholder="quant_trader_01" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Secure Email Orbit</label>
+                    <input type="email" id="email" placeholder="name@network.com" required>
+                </div>
+
+                <div class="input-group">
+                    <label>System Access Key</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="auth-btn" id="submit-btn">Authorize & Synchronize</button>
+            </form>
+
+            <div id="status"></div>
+
+            <p class="mode-toggle" id="toggle-text">
+                Already have an account? <span onclick="toggleMode()">Switch to Login</span>
+            </p>
+
+            <div class="pane-footer">
+                <a href="/">← Return to Main Terminal</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLoginMode = false;
+
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            const pane = document.getElementById('auth-pane');
+            const title = document.getElementById('auth-title');
+            const desc = document.getElementById('auth-desc');
+            const btn = document.getElementById('submit-btn');
+            const label = document.getElementById('protocol-label');
+            const toggleText = document.getElementById('toggle-text');
+            const usernameInput = document.getElementById('username');
+
+            if (isLoginMode) {
+                pane.classList.add('login-mode');
+                label.innerText = "System Protocol // Login";
+                title.innerText = "Access Node";
+                desc.innerText = "Re-establish connection to your data center.";
+                btn.innerText = "Log In to Node";
+                toggleText.innerHTML = "New to the network? <span onclick='toggleMode()'>Create Account</span>";
+                usernameInput.removeAttribute('required');
+            } else {
+                pane.classList.remove('login-mode');
+                label.innerText = "System Protocol // Register";
+                title.innerText = "Initialize Node";
+                desc.innerText = "Connect your account to the analysis network.";
+                btn.innerText = "Authorize & Synchronize";
+                toggleText.innerHTML = "Already have an account? <span onclick='toggleMode()'>Switch to Login</span>";
+                usernameInput.setAttribute('required', '');
+            }
+        }
+
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('status');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value;
+
+            statusDiv.innerHTML = "Analyzing packets...";
+            statusDiv.className = "";
+
+            const endpoint = isLoginMode ? '/login' : '/register';
+            const payload = isLoginMode ? { email, password } : { username, email, password };
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.className = "success";
+                    statusDiv.innerHTML = isLoginMode ? "Login Successful. Entering Dashboard..." : "Node Registered. Syncing...";
+                    
+                    setTimeout(() => {
+                        window.location.href = "/dashboard";
+                    }, 1200);
+                } else {
+                    statusDiv.className = "error";
+                    statusDiv.innerHTML = "Error: " + result.message;
+                }
+            } catch (err) {
+                statusDiv.className = "error";
+                statusDiv.innerHTML = "System Failure: Check local server connection.";
+            }
+        });
+    </script>
+</body>
+</html>

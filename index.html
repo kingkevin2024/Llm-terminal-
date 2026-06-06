@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Look and Leap | Shopify Health Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/64d58efce2.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-black: #000000;
+            --bg-pane: #0d1117;
+            --accent: #2962ff;
+            --accent-glow: rgba(41, 98, 255, 0.4);
+            --border: #2a2e39;
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --success: #00ff88;
+        }
+
+        [data-theme="light"] {
+            --bg-black: #ffffff;
+            --bg-pane: #f6f8fa;
+            --border: #d1d4dc;
+            --text-main: #131722;
+            --text-muted: #484b54;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+            text-align: center; /* Global center alignment */
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 2rem; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); filter: blur(5px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .reveal { opacity: 0; transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* --- STICKY HEADER (SHORTENED) --- */
+        .sticky-header {
+            position: sticky;
+            top: 20px;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            margin: 0 auto;
+            width: fit-content;
+            padding: 5px 25px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .nav-wrapper { display: flex; align-items: center; gap: 30px; height: 50px; }
+        .logo { font-weight: 800; font-size: 1rem; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+        .nav-links { display: flex; list-style: none; gap: 20px; align-items: center; }
+        .nav-links a { text-decoration: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; transition: 0.3s; }
+        .nav-links a:hover { color: var(--text-main); }
+
+        /* --- HERO --- */
+        .hero-section { padding: 120px 0 80px; position: relative; }
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease-out both;
+        }
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        /* --- FEATURE CARDS --- */
+        .feature-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 25px; 
+            margin-top: 50px;
+        }
+        .feature-card {
+            background: var(--bg-pane);
+            border: 1px solid var(--border);
+            padding: 40px 30px;
+            border-radius: 16px;
+            transition: 0.4s;
+        }
+        .feature-card:hover { border-color: var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .feature-card i { font-size: 2rem; color: var(--accent); margin-bottom: 20px; }
+        .feature-card h3 { margin-bottom: 15px; font-size: 1.3rem; }
+
+        /* --- PRICING (FOUNDERS) --- */
+        .pricing-section { padding: 100px 0; }
+        .pricing-card {
+            background: linear-gradient(145deg, #0d1117, #000);
+            border: 1px solid var(--accent);
+            border-radius: 24px;
+            padding: 60px 40px;
+            max-width: 550px;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 0 50px rgba(41, 98, 255, 0.1);
+        }
+        .old-price { color: var(--text-muted); text-decoration: line-through; font-size: 1.2rem; }
+        .new-price { font-size: 5rem; font-weight: 900; color: var(--success); display: block; margin: 10px 0; }
+
+        /* --- DISCORD --- */
+        .discord-box {
+            background: #5865F2;
+            color: white;
+            padding: 50px;
+            border-radius: 24px;
+            margin-top: 80px;
+            transition: 0.3s;
+        }
+        .discord-box:hover { transform: scale(1.02); }
+        .btn-discord { 
+            background: white; color: #5865F2; 
+            padding: 15px 35px; border-radius: 50px; 
+            text-decoration: none; font-weight: 800; display: inline-block; margin-top: 25px;
+        }
+
+        /* --- CTA BUTTONS --- */
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            padding: 16px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-block;
+            transition: 0.3s;
+            border: none;
+        }
+        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--accent-glow); }
+
+        /* --- FOOTER --- */
+        footer { padding: 80px 0 40px; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); }
+
+        @media (max-width: 768px) {
+            .sticky-header { width: 90%; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="sticky-header">
+        <div class="nav-wrapper">
+            <div class="logo">LL TERMINAL</div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#mission">Mission</a></li>
+                    <li><a href="#pricing">Founders</a></li>
+                    <li><a href="/auth" style="color: var(--accent)">Enter</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Hero -->
+        <section class="hero-section">
+            <div style="font-size: 0.7rem; color: var(--accent); font-weight: 800; letter-spacing: 3px; margin-bottom: 20px;">SYSTEM STATUS: UNDER DEVELOPMENT</div>
+            <h1 class="hero-title">Automated Shopify Health Engine.</h1>
+            <p class="hero-subtitle">We automate the technical oversight that usually requires a team of developers. A high-speed diagnostic bridge to your peak store performance.</p>
+            <a href="/auth" class="btn-primary">Start API Handshake</a>
+        </section>
+
+        <!-- Mission -->
+        <section id="mission" class="reveal" style="padding-top: 100px;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 50px;">Engine Architecture</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i class="fas fa-microchip"></i>
+                    <h3>Market Intel</h3>
+                    <p>Track viral competitors and analyze product velocity in real-time. Stay ahead of the scale.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-shield-virus"></i>
+                    <h3>Hardening</h3>
+                    <p>Security header audits and protocol error detection to ensure total customer trust.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-bolt"></i>
+                    <h3>Funnel Fix</h3>
+                    <p>Identify UI/UX leaks and broken flows that are directly draining your revenue.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section id="pricing" class="pricing-section reveal">
+            <div class="pricing-card">
+                <h3 style="letter-spacing: 2px; font-size: 0.8rem; color: var(--accent); margin-bottom: 20px;">EXCLUSIVE EARLY ACCESS</h3>
+                <h2 style="font-size: 2.5rem; margin-bottom: 10px;">Founder's License</h2>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">Complete access to the Performance Health Engine for our first 100 users.</p>
+                
+                <span class="old-price">$5,000 / Year</span>
+                <span class="new-price">FREE</span>
+                
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 30px;">Limited slots remaining before public rollout.</p>
+                <a href="/auth" class="btn-primary" style="width: 100%;">Claim Access Now</a>
+            </div>
+        </section>
+
+        <!-- Discord -->
+        <section class="reveal">
+            <div class="discord-box">
+                <h2 style="font-size: 2rem; margin-bottom: 10px;">Join the Intelligence Network</h2>
+                <p>Get daily system updates, freebies, and dev access.</p>
+                <a href="#" class="btn-discord"><i class="fab fa-discord"></i> Connect to Discord</a>
+            </div>
+        </section>
+
+        <!-- Contact -->
+        <section class="reveal" style="padding: 100px 0;">
+            <h2 style="margin-bottom: 10px;">Direct Support</h2>
+            <p style="color: var(--text-muted);">Technical inquiries & integrations</p>
+            <a href="mailto:kvnmireku@gmail.com" style="color: var(--accent); font-size: 1.5rem; font-weight: 800; text-decoration: none;">kvnmireku@gmail.com</a>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 L&L Terminal // Engineered for Shopify Excellence</p>
+    </footer>
+
+    <script>
+        // Intersection Observer for animations
+        const observerOptions = { threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            el.style.transform = 'translateY(40px)';
+            observer.observe(el);
+        });
+
+        // Simplified header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.sticky-header');
+            if (window.scrollY > 50) {
+                header.style.padding = "2px 20px";
+                header.style.background = "rgba(0,0,0,0.9)";
+            } else {
+                header.style.padding = "5px 25px";
+                header.style.background = "rgba(10, 10, 10, 0.7)";
+            }
+        });
+    </script>
+</body>
+</html>

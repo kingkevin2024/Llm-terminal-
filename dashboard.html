@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal | Look and Leap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/64d58efce2.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-black: #050505;
+            --bg-sidebar: #0a0e14;
+            --bg-pane: #0f121a;
+            --accent: #2962ff;
+            --accent-glow: rgba(41, 98, 255, 0.4);
+            --border: #1e222d;
+            --text-main: #ffffff;
+            --text-dim: #868991;
+            --success: #00ff88;
+            --error: #ff4444;
+            --sidebar-width: 240px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: var(--bg-black); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* Sidebar - Responsive Navigation */
+        .sidebar { 
+            width: var(--sidebar-width); 
+            background: var(--bg-sidebar); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sidebar-brand { 
+            padding: 25px; 
+            font-weight: 800; 
+            color: var(--accent); 
+            border-bottom: 1px solid var(--border); 
+            letter-spacing: 1px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nav-list { flex-grow: 1; padding: 20px 10px; list-style: none; }
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px 15px; 
+            color: var(--text-dim); 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            transition: 0.2s;
+        }
+        .nav-link:hover, .nav-link.active { background: rgba(41, 98, 255, 0.1); color: var(--text-main); }
+        .nav-link i { margin-right: 12px; width: 18px; }
+
+        /* Main Area */
+        .main-content { 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            min-width: 0; 
+        }
+
+        .top-nav { 
+            height: 60px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 0 25px; 
+            background: var(--bg-sidebar); 
+        }
+
+        .system-status { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--success); }
+        .system-status span { animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* Grid Layout */
+        .grid-container { 
+            padding: 25px; 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 20px; 
+            overflow-y: auto; 
+            height: calc(100vh - 60px);
+        }
+
+        .widget { 
+            background: var(--bg-pane); 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            padding: 20px; 
+            transition: border-color 0.3s;
+        }
+        .widget:hover { border-color: var(--accent); }
+        
+        .widget-header { 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            margin-bottom: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .stat-value { font-size: 1.8rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 5px; }
+
+        /* Chart & Large Widgets */
+        .col-span-2 { grid-column: span 2; }
+        .col-span-4 { grid-column: span 4; }
+        .chart-container { height: 250px; position: relative; }
+
+        /* Disconnected Overlay */
+        .overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); 
+            display: none; justify-content: center; align-items: center; z-index: 2000; 
+        }
+        .alert-card { 
+            background: var(--bg-pane); border: 1px solid var(--accent); 
+            padding: 50px; border-radius: 12px; text-align: center; max-width: 450px; 
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+        .btn-connect { 
+            background: var(--accent); color: white; padding: 14px 30px; 
+            text-decoration: none; border-radius: 4px; font-weight: 700; 
+            display: inline-block; margin-top: 20px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1024px) {
+            .grid-container { grid-template-columns: repeat(2, 1fr); }
+            .col-span-4 { grid-column: span 2; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { 
+                position: fixed; left: -100%; height: 100%; width: 240px; 
+            }
+            .sidebar.active { left: 0; }
+            .grid-container { grid-template-columns: 1fr; padding: 15px; }
+            .col-span-2, .col-span-4 { grid-column: span 1; }
+            .mobile-toggle { display: block; color: white; font-size: 1.2rem; cursor: pointer; }
+        }
+
+        @media (min-width: 769px) { .mobile-toggle { display: none; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- Connection Alert -->
+    <div class="overlay" id="domainAlert">
+        <div class="alert-card">
+            <i class="fas fa-satellite-dish" style="font-size: 3.5rem; color: var(--accent); margin-bottom: 25px;"></i>
+            <h2 style="margin-bottom: 15px;">LINK NOT ESTABLISHED</h2>
+            <p style="color: var(--text-dim); line-height: 1.6;">Your terminal is offline. Connect your Shopify Admin API to begin real-time market data ingestion.</p>
+            <a href="/settings" class="btn-connect">Initialize Connection</a>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">L&L // SYSTEM</div>
+        <ul class="nav-list">
+            <li><a href="/dashboard" class="nav-link active"><i class="fas fa-terminal"></i> Terminal</a></li>
+            <!-- NEW WEB SCAN SECTION -->
+            <li><a href="/scan" class="nav-link"><i class="fas fa-search"></i> Web Scan</a></li>
+            <li><a href="/settings" class="nav-link"><i class="fas fa-cog"></i> Config</a></li>
+        </ul>
+        <div style="padding: 20px; border-top: 1px solid var(--border);">
+            <a href="/logout" style="color: var(--error); text-decoration: none; font-size: 0.8rem;"><i class="fas fa-power-off"></i> Terminate Session</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-nav">
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <i class="fas fa-bars mobile-toggle" onclick="toggleSidebar()"></i>
+                <div class="system-status"><span>●</span> LIVE_FEED: <span id="shop-name">ESTABLISHING...</span></div>
+            </div>
+            <div style="font-size: 0.85rem; font-weight: 600;">
+                <i class="fas fa-user-shield" style="color: var(--accent);"></i> {{ username }}
+            </div>
+        </header>
+
+        <div class="grid-container">
+            <!-- Integration Status Widget -->
+            <div class="widget">
+                <div class="widget-header">Connection <i class="fas fa-link"></i></div>
+                <div id="connection-indicator" style="font-weight: 700; font-size: 1.1rem; color: var(--text-dim);">
+                    CHECKING...
+                </div>
+                <div class="stat-label">API v2024.04 Active</div>
+            </div>
+
+            <!-- Revenue Widget -->
+            <div class="widget">
+                <div class="widget-header">Market Currency <i class="fas fa-coins"></i></div>
+                <div class="stat-value" id="currency-code">--</div>
+                <div class="stat-label">Base Store Currency</div>
+            </div>
+
+            <!-- Chart Widget -->
+            <div class="widget col-span-2">
+                <div class="widget-header">Real-Time Growth <i class="fas fa-chart-area"></i></div>
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Live Feed Table (Dynamic Connection Status) -->
+            <div class="widget col-span-4">
+                <div class="widget-header">Live System Logs <i class="fas fa-stream"></i></div>
+                <div id="log-container" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim);">
+                    <div style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                        <span style="color: var(--accent);">[SYS]</span> Booting L&L Neural Engine... <span style="float:right">READY</span>
+                    </div>
+                    <div style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                        <span style="color: var(--accent);">[API]</span> Admin Handshake... <span style="float:right" id="handshake-status">PENDING</span>
+                    </div>
+                    <div style="padding: 10px 0;">
+                        <span style="color: var(--accent);">[WEB]</span> Webhook Signal... <span style="float:right" id="webhook-status">PENDING</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        const isConnected = {{ shopify_connected | lower }};
+        
+        async function loadDashboardData() {
+            if (!isConnected) {
+                document.getElementById('domainAlert').style.display = 'flex';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                if (data.connected) {
+                    document.getElementById('shop-name').innerText = data.shop_name.toUpperCase();
+                    document.getElementById('currency-code').innerText = data.currency;
+                    
+                    // Update API Handshake Status
+                    const apiStatus = document.getElementById('handshake-status');
+                    apiStatus.innerText = "CONNECTED";
+                    apiStatus.style.color = "var(--success)";
+                    
+                    // Update Webhook Status
+                    const webStatus = document.getElementById('webhook-status');
+                    webStatus.innerText = data.webhook_active ? "ACTIVE" : "INACTIVE";
+                    webStatus.style.color = data.webhook_active ? "var(--success)" : "var(--error)";
+
+                    const connIndicator = document.getElementById('connection-indicator');
+                    connIndicator.innerHTML = '<i class="fas fa-check-circle"></i> LINKED';
+                    connIndicator.style.color = "var(--success)";
+
+                    renderChart(data.chart_data);
+                } else {
+                    document.getElementById('domainAlert').style.display = 'flex';
+                }
+            } catch (e) {
+                console.error("Critical System Sync Failure", e);
+            }
+        }
+
+        function renderChart(points) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(41, 98, 255, 0.4)');
+            gradient.addColorStop(1, 'rgba(41, 98, 255, 0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'NOW'],
+                    datasets: [{
+                        data: points,
+                        borderColor: '#2962ff',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#2962ff',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            grid: { color: '#1e222d' },
+                            ticks: { color: '#5d606b', font: { family: 'JetBrains Mono' } }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#5d606b', font: { family: 'JetBrains Mono' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        loadDashboardData();
+    </script>
+</body>
+</html>
